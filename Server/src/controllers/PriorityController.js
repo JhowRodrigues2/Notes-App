@@ -1,0 +1,20 @@
+const { response } = require("express");
+const Annotations = require("../models/AnnotationsData");
+module.exports = {
+  async read(request, responde) {
+    const priority = request.query;
+    const priorityNotes = await Annotations.find(priority);
+    return responde.json(priorityNotes);
+  },
+  async update(request, response) {
+    const { id } = request.params;
+    const annotation = await Annotations.findOne({ _id: id });
+    if (annotation.priority) {
+      annotation.priority = false;
+    } else {
+      annotation.priority = true;
+    }
+    await annotation.save();
+    return response.json(annotation);
+  },
+};
