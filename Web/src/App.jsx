@@ -53,6 +53,8 @@ function App() {
               Título da Anotação
             </label>
             <input
+              required
+              maxLength={33}
               value={title}
               onChange={(e) => setTitles(e.target.value)}
               type="text"
