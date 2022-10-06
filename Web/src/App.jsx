@@ -7,14 +7,52 @@ function App() {
   const [title, setTitles] = useState("");
   const [notes, setNotes] = useState("");
   const [allNotes, setAllNotes] = useState([]);
+  const [selectedValue, setSelectedValue] = useState("all");
 
   useEffect(() => {
-    async function getAllNotes() {
-      const response = await api.get("/annotations");
-      setAllNotes(response.data);
-    }
     getAllNotes();
   }, []);
+
+  async function getAllNotes() {
+    const response = await api.get("/annotations");
+    setAllNotes(response.data);
+  }
+
+  async function loadNotes(option) {
+    const params = { priority: option };
+    const response = await api.get("/priorities", { params });
+
+    if (response) {
+      setAllNotes(response.data);
+    }
+  }
+
+  function handleChange(e) {
+    setSelectedValue(e.value);
+    if (e.checked && e.value != "all") {
+      loadNotes(e.value);
+    } else {
+      getAllNotes();
+    }
+  }
+
+  async function handleDelete(id) {
+    const deleteNote = await api.delete(`/annotations/${id}`);
+
+    if (deleteNote) {
+      setAllNotes(allNotes.filter((note) => note._id != id));
+    }
+  }
+
+  async function handleChangePriority(id) {
+    const note = await api.post(`/priorities/${id}`);
+
+    if (note && selectedValue != "all") {
+      loadNotes(selectedValue);
+    } else if (note) {
+      getAllNotes();
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,7 +64,11 @@ function App() {
     setTitles("");
     setNotes("");
 
-    setAllNotes([...allNotes, response.data]);
+    if (selectedValue != "all") {
+      getAllNotes();
+    } else {
+      setAllNotes([...allNotes, response.data]);
+    }
   }
 
   useEffect(() => {
@@ -58,7 +100,7 @@ function App() {
               value={title}
               onChange={(e) => setTitles(e.target.value)}
               type="text"
-              className="w-full h-8 text-sm text-[#666] border-b border-[#eee] mt-5"
+              className="w-full h-8 text-sm text-[#666] border-b border-[#acacac] mt-5 focus:outline-none"
             />
           </div>
           <div className="">
@@ -69,7 +111,7 @@ function App() {
               Anotações
             </label>
             <textarea
-              className="mt-2 w-full h-52 resize-none"
+              className="mt-2 w-full h-52 resize-none border border-[#acacac] focus:outline-none p-1"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               required
@@ -83,12 +125,21 @@ function App() {
             Salvar
           </button>
         </form>
-        <RadioButton />
+
+        <RadioButton
+          selectedValue={selectedValue}
+          handleChange={handleChange}
+        />
       </aside>
       <main className="flex ml-6 w-full ">
         <ul className="grid xl:grid-cols-4 md:grid-cols-2 gap-5 list-none w-full">
           {allNotes.map((data) => (
-            <Notes data={data} />
+            <Notes
+              key={data._id}
+              data={data}
+              handleDelete={handleDelete}
+              handleChangePriority={handleChangePriority}
+            />
           ))}
         </ul>
       </main>
